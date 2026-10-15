@@ -70,6 +70,8 @@ class FloraTests(TestCase):
   self.assertIn("Código", form.fields["sku"].label)
 
  def test_loss_form_calculates_cost_from_product_times_quantity(self):
+  self.p.preco_venda = Decimal("42.50")
+  self.p.save(update_fields=["preco_venda"])
   form = PerdaForm(data={
    "produto": self.p.pk,
    "quantidade": "2",
@@ -78,7 +80,7 @@ class FloraTests(TestCase):
    "custo_estimado": "",
   })
   self.assertTrue(form.is_valid(), form.errors)
-  self.assertEqual(form.cleaned_data["custo_estimado"], Decimal("16.00"))
+  self.assertEqual(form.cleaned_data["custo_estimado"], Decimal("85.00"))
 
  def test_cpf_validation(self):
   c=Cliente(nome="CPF",telefone="11999",cpf="111.111.111-11")

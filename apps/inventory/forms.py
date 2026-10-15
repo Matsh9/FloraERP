@@ -22,6 +22,6 @@ class PerdaForm(forms.ModelForm):
         produto = cleaned_data.get("produto")
         quantidade = cleaned_data.get("quantidade")
         if produto and quantidade and quantidade > 0:
-            custo_unitario = produto.custo_aquisicao or produto.preco_venda or Decimal("0")
-            cleaned_data["custo_estimado"] = custo_unitario * Decimal(str(quantidade))
+            preco_unitario = produto.preco_venda or produto.custo_aquisicao or Decimal("0")
+            cleaned_data["custo_estimado"] = preco_unitario * Decimal(str(quantidade))
         return cleaned_data

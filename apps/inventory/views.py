@@ -22,15 +22,15 @@ def movimentacoes(request):
 @admin_required
 def registrar_perda(request):
  form=PerdaForm(request.POST or None)
- produtos=Produto.objects.filter(ativo=True).order_by("nome").values("id","custo_aquisicao","preco_venda")
- produtos_json={str(p["id"]): str((p["custo_aquisicao"] or p["preco_venda"] or Decimal("0"))) for p in produtos}
+ produtos=Produto.objects.filter(ativo=True).order_by("nome").values("id","preco_venda","custo_aquisicao")
+ produtos_json={str(p["id"]): str((p["preco_venda"] or p["custo_aquisicao"] or Decimal("0"))) for p in produtos}
  if request.method=="POST" and form.is_valid():
   try:
    with transaction.atomic():
     perda=form.save(commit=False); produto=Produto.objects.select_for_update().get(pk=perda.produto_id)
     if perda.quantidade<=0: raise ValidationError("A quantidade deve ser maior que zero.")
     if produto.estoque<perda.quantidade: raise ValidationError("Estoque insuficiente para registrar essa perda.")
-    custo_unitario = produto.custo_aquisicao or produto.preco_venda or Decimal("0")
+    custo_unitario = produto.preco_venda or produto.custo_aquisicao or Decimal("0")
     perda.custo_estimado = custo_unitario * Decimal(str(perda.quantidade))
     antes=produto.estoque; produto.estoque-=perda.quantidade; produto.save(update_fields=["estoque","atualizado_em"])
     mov=MovimentacaoEstoque.objects.create(produto=produto,tipo="perda",quantidade=perda.quantidade,saldo_anterior=antes,saldo_posterior=produto.estoque,observacao=perda.observacao,usuario=request.user)
