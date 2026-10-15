@@ -3,6 +3,7 @@ from django.test import TestCase,Client as TestClient
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from apps.catalog.forms import ProdutoForm
 from apps.catalog.models import Categoria,Produto,Kit,ItemKit
 from apps.customers.models import Cliente
 from apps.sales.models import Pedido
@@ -47,6 +48,26 @@ class FloraTests(TestCase):
  def test_low_stock_alert(self):
   self.p.estoque=Decimal("2"); self.p.save()
   self.assertEqual(self.client.get(reverse("estoque_alertas")).status_code,200)
+ def test_producto_form_restricts_integer_stock_and_labels_currency_and_sku(self):
+  form = ProdutoForm(data={
+   "nome": "Rosa",
+   "sku": "ROS-001",
+   "categoria": self.cat.pk,
+   "descricao": "Teste",
+   "preco_venda": "29.90",
+   "custo_aquisicao": "12.50",
+   "estoque": "3.5",
+   "estoque_minimo": "1",
+   "unidade": "un",
+   "ativo": True,
+  })
+  self.assertFalse(form.is_valid())
+  self.assertIn("Estoque", form.fields["estoque"].label)
+  self.assertIn("R$", form.fields["preco_venda"].label)
+  self.assertIn("SKU", form.fields["sku"].label)
+  self.assertIn("\"", form.fields["sku"].label)
+  self.assertIn("Código", form.fields["sku"].label)
+
  def test_cpf_validation(self):
   c=Cliente(nome="CPF",telefone="11999",cpf="111.111.111-11")
   with self.assertRaises(ValidationError): c.full_clean()
