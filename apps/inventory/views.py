@@ -1,3 +1,5 @@
+import json
+from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
@@ -20,16 +22,20 @@ def movimentacoes(request):
 @admin_required
 def registrar_perda(request):
  form=PerdaForm(request.POST or None)
+ produtos=Produto.objects.filter(ativo=True).order_by("nome").values("id","custo_aquisicao","preco_venda")
+ produtos_json={str(p["id"]): str((p["custo_aquisicao"] or p["preco_venda"] or Decimal("0"))) for p in produtos}
  if request.method=="POST" and form.is_valid():
   try:
    with transaction.atomic():
     perda=form.save(commit=False); produto=Produto.objects.select_for_update().get(pk=perda.produto_id)
     if perda.quantidade<=0: raise ValidationError("A quantidade deve ser maior que zero.")
     if produto.estoque<perda.quantidade: raise ValidationError("Estoque insuficiente para registrar essa perda.")
+    custo_unitario = produto.custo_aquisicao or produto.preco_venda or Decimal("0")
+    perda.custo_estimado = custo_unitario * Decimal(str(perda.quantidade))
     antes=produto.estoque; produto.estoque-=perda.quantidade; produto.save(update_fields=["estoque","atualizado_em"])
     mov=MovimentacaoEstoque.objects.create(produto=produto,tipo="perda",quantidade=perda.quantidade,saldo_anterior=antes,saldo_posterior=produto.estoque,observacao=perda.observacao,usuario=request.user)
     perda.usuario=request.user; perda.movimentacao=mov; perda.save()
-    RegistroAuditoria.objects.create(usuario=request.user,acao="perda_estoque",entidade="PerdaEstoque",entidade_id=perda.pk,detalhes=f"Produto {produto.sku}; quantidade {perda.quantidade}")
+    RegistroAuditoria.objects.create(usuario=request.user,acao="perda_estoque",entidade="PerdaEstoque",entidade_id=perda.pk,detalhes=f"Produto {produto.sku}; quantidade {perda.quantidade}; custo {perda.custo_estimado}")
    messages.success(request,"Perda registrada e estoque atualizado."); return redirect("estoque_movimentacoes")
   except (ValidationError,ValueError) as e: form.add_error(None,e.message if hasattr(e,"message") else str(e))
- return render(request,"shared/form.html",{"form":form,"titulo":"Registrar perda de estoque"})
+ return render(request,"shared/form.html",{"form":form,"titulo":"Registrar perda de estoque","produtos_json":json.dumps(produtos_json)})

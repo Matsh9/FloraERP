@@ -6,6 +6,7 @@ from django.urls import reverse
 from apps.catalog.forms import ProdutoForm
 from apps.catalog.models import Categoria,Produto,Kit,ItemKit
 from apps.customers.models import Cliente
+from apps.inventory.forms import PerdaForm
 from apps.sales.models import Pedido
 from apps.sales.services import concluir_pedido,cancelar_pedido
 from apps.inventory.models import PerdaEstoque,MovimentacaoEstoque
@@ -67,6 +68,17 @@ class FloraTests(TestCase):
   self.assertIn("SKU", form.fields["sku"].label)
   self.assertIn("\"", form.fields["sku"].label)
   self.assertIn("Código", form.fields["sku"].label)
+
+ def test_loss_form_calculates_cost_from_product_times_quantity(self):
+  form = PerdaForm(data={
+   "produto": self.p.pk,
+   "quantidade": "2",
+   "motivo": "murcho",
+   "observacao": "Teste",
+   "custo_estimado": "",
+  })
+  self.assertTrue(form.is_valid(), form.errors)
+  self.assertEqual(form.cleaned_data["custo_estimado"], Decimal("16.00"))
 
  def test_cpf_validation(self):
   c=Cliente(nome="CPF",telefone="11999",cpf="111.111.111-11")
