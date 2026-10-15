@@ -1,4 +1,5 @@
 import os
+import dj_database_url
 from pathlib import Path
 from urllib.parse import urlparse
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,15 +31,15 @@ TEMPLATES = [{"BACKEND":"django.template.backends.django.DjangoTemplates","DIRS"
 "django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
-DATABASE_URL = os.getenv("DATABASE_URL","").strip()
-if DATABASE_URL.startswith(("postgres://","postgresql://")):
-    parsed=urlparse(DATABASE_URL)
-    DATABASES={"default":{"ENGINE":"django.db.backends.postgresql","NAME":parsed.path.lstrip("/"),
-      "USER":parsed.username or "","PASSWORD":parsed.password or "","HOST":parsed.hostname or "",
-      "PORT":parsed.port or 5432,"CONN_MAX_AGE":60,
-      "OPTIONS":{"sslmode":"require"} if os.getenv("DB_SSL","").lower()=="true" else {}}}
-else:
-    DATABASES={"default":{"ENGINE":"django.db.backends.sqlite3","NAME":BASE_DIR/"db.sqlite3"}}
+
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=0,
+        ssl_require=True,
+    )
+}
+
 AUTH_PASSWORD_VALIDATORS = [
 {"NAME":"django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
 {"NAME":"django.contrib.auth.password_validation.MinimumLengthValidator"},
