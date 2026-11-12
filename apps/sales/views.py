@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from apps.catalog.models import Produto,Kit
 from .models import Pedido,ItemPedido
-from .services import concluir_pedido,cancelar_pedido
+from .services import concluir_pedido,cancelar_pedido,registrar_pagamento
 @login_required
 def pdv(request):
  if request.method=="POST":
@@ -39,6 +39,18 @@ def historico(request):
 def detalhe(request,pk): return render(request,"sales/detalhe.html",{"pedido":get_object_or_404(Pedido.objects.select_related("cliente","atendente").prefetch_related("itens","pagamentos"),pk=pk)})
 @login_required
 def comprovante(request,pk): return render(request,"sales/comprovante.html",{"pedido":get_object_or_404(Pedido.objects.prefetch_related("itens","pagamentos"),pk=pk)})
+@login_required
+def pagamento(request,pk):
+ p=get_object_or_404(Pedido.objects.prefetch_related("pagamentos"),pk=pk)
+ if request.method=="POST":
+  try:
+   valor=request.POST.get("valor")
+   registrar_pagamento(p, request.POST.get("forma_pagamento"), valor, request.POST.get("referencia",""), request.user)
+   messages.success(request,"Pagamento registrado com sucesso.")
+  except ValidationError as e:
+   messages.error(request,str(e))
+ return redirect("venda_detalhe",pk=pk)
+
 @login_required
 def cancelar(request,pk):
  p=get_object_or_404(Pedido,pk=pk)

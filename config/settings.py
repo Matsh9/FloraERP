@@ -35,7 +35,7 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASE_URL = os.getenv("DATABASE_URL")
 DATABASES = {
     "default": dj_database_url.config(
-        default=DATABASE_URL,
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=0,
         ssl_require=bool(DATABASE_URL and not DATABASE_URL.startswith("sqlite://")),
     )
