@@ -82,7 +82,7 @@ Crie previamente o banco e usuário no PostgreSQL. Para produção, use HTTPS, s
 - Histórico de vendas, comprovante imprimível e cancelamento com estorno auditável.
 - Entregas com validação de datas e status.
 - Perdas e avarias com movimentação de estoque.
-- Alertas e histórico de movimentações.
+- Alertas de estoque mínimo e validade (vencidos ou nos próximos 30 dias), além do histórico de movimentações.
 - Relatórios com exportação CSV.
 - Administração nativa do Django, registro de auditoria e comando de demonstração.
 - Testes automatizados básicos para autenticação, vendas, estoque, kits, estorno e validação.

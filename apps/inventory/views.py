@@ -1,11 +1,13 @@
 import json
+from datetime import timedelta
 from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.shortcuts import render,redirect
 from django.core.exceptions import ValidationError
-from django.db.models import F
+from django.db.models import F, Q
+from django.utils import timezone
 from .models import PerdaEstoque,MovimentacaoEstoque
 from .forms import PerdaForm
 from apps.catalog.models import Produto
@@ -13,8 +15,20 @@ from apps.core.models import RegistroAuditoria
 def admin_required(view): return user_passes_test(lambda u:u.is_superuser or u.groups.filter(name="Administrador").exists())(view)
 @login_required
 def alertas(request):
- qs=Produto.objects.filter(ativo=True,estoque__lte=F("estoque_minimo")).select_related("categoria")
- return render(request,"inventory/alertas.html",{"produtos":qs})
+ hoje=timezone.localdate()
+ limite_validade=hoje+timedelta(days=30)
+ baixo=Produto.objects.filter(ativo=True,estoque__lte=F("estoque_minimo"))
+ validade=Produto.objects.filter(ativo=True,data_validade__isnull=False,data_validade__lte=limite_validade)
+ produtos=Produto.objects.filter(ativo=True).filter(
+  Q(estoque__lte=F("estoque_minimo")) |
+  Q(data_validade__isnull=False,data_validade__lte=limite_validade)
+ ).select_related("categoria")
+ return render(request,"inventory/alertas.html",{
+  "produtos":produtos,
+  "baixo":baixo.count(),
+  "validade":validade.count(),
+  "hoje":hoje,
+ })
 @login_required
 def movimentacoes(request):
  return render(request,"inventory/movimentacoes.html",{"movimentacoes":MovimentacaoEstoque.objects.select_related("produto","usuario")[:200]})

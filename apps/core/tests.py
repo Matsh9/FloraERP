@@ -12,6 +12,7 @@ from apps.sales.services import concluir_pedido,cancelar_pedido
 from apps.inventory.models import PerdaEstoque,MovimentacaoEstoque
 from apps.deliveries.models import Entrega
 from django.utils import timezone
+from datetime import timedelta
 class FloraTests(TestCase):
  def setUp(self):
   self.user=get_user_model().objects.create_user(username="admin",password="StrongPass123!",is_superuser=True,is_staff=True)
@@ -49,6 +50,13 @@ class FloraTests(TestCase):
  def test_low_stock_alert(self):
   self.p.estoque=Decimal("2"); self.p.save()
   self.assertEqual(self.client.get(reverse("estoque_alertas")).status_code,200)
+ def test_expiry_alert_is_shown_and_updates_from_current_date(self):
+  self.p.data_validade=timezone.localdate()+timedelta(days=30)
+  self.p.save(update_fields=["data_validade"])
+  self.assertContains(self.client.get(reverse("estoque_alertas")),"Validade próxima")
+  self.p.data_validade=timezone.localdate()+timedelta(days=31)
+  self.p.save(update_fields=["data_validade"])
+  self.assertNotContains(self.client.get(reverse("estoque_alertas")),self.p.nome)
  def test_producto_form_restricts_integer_stock_and_labels_currency_and_sku(self):
   form = ProdutoForm(data={
    "nome": "Rosa",

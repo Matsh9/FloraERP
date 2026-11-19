@@ -17,6 +17,11 @@ def dashboard(request):
     top=ItemPedido.objects.filter(pedido__status="concluido").values("nome_item").annotate(qtd=Sum("quantidade")).order_by("-qtd")[:5]
     ultimas=Pedido.objects.select_related("cliente","atendente").all()[:8]
     baixo=Produto.objects.filter(ativo=True,estoque__lte=F("estoque_minimo")).count()
+    validade=Produto.objects.filter(
+      ativo=True,
+      data_validade__isnull=False,
+      data_validade__lte=hoje+timedelta(days=30),
+    ).count()
     zero=Produto.objects.filter(ativo=True,estoque=0).count()
     pendentes=Pedido.objects.filter(status="aberto").count()
     entregas=Entrega.objects.filter(data_entrega=hoje).exclude(status__in=["entregue","cancelada"]).count()
@@ -25,7 +30,7 @@ def dashboard(request):
     vendas_dias=[{"dia":d.strftime("%d/%m"),"total":float(Pedido.objects.filter(status="concluido",concluido_em__date=d).aggregate(v=Sum("total"))["v"] or 0)} for d in dias]
     return render(request,"dashboard/index.html",{"faturamento":faturamento,"total_vendas":total_vendas,
       "ticket":faturamento/total_vendas if total_vendas else Decimal("0"),"produtos":Produto.objects.filter(ativo=True).count(),
-      "baixo":baixo,"zero":zero,"pendentes":pendentes,"entregas":entregas,"perdas":perdas,
+      "baixo":baixo,"validade":validade,"zero":zero,"pendentes":pendentes,"entregas":entregas,"perdas":perdas,
       "top":top,"ultimas":ultimas,"vendas_dias":vendas_dias})
 @login_required
 def pesquisa_global(request):

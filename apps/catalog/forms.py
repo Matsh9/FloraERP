@@ -27,10 +27,15 @@ class ProdutoForm(forms.ModelForm):
         min_value=0,
         widget=forms.NumberInput(attrs={"step": "1", "min": "0", "placeholder": "0"}),
     )
+    data_validade = forms.DateField(
+        label="Data de validade",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
 
     class Meta:
         model=Produto
-        fields=["nome","sku","categoria","descricao","imagem","preco_venda","custo_aquisicao","estoque","estoque_minimo","unidade","ativo"]
+        fields=["nome","sku","categoria","descricao","imagem","preco_venda","custo_aquisicao","estoque","estoque_minimo","data_validade","unidade","ativo"]
         labels={
             "nome": "Nome",
             "sku": 'SKU ("Código único do produto")',

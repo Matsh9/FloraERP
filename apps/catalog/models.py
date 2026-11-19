@@ -16,6 +16,7 @@ class Produto(models.Model):
     custo_aquisicao=models.DecimalField(max_digits=10,decimal_places=2,default=0)
     estoque=models.IntegerField(default=0)
     estoque_minimo=models.IntegerField(default=0)
+    data_validade=models.DateField(null=True,blank=True)
     unidade=models.CharField(max_length=10,choices=UNIDADES,default="un")
     ativo=models.BooleanField(default=True)
     criado_em=models.DateTimeField(auto_now_add=True)
