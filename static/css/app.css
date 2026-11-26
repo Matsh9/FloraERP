@@ -866,6 +866,13 @@ label {
   gap: 18px;
 }
 
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 1100px) {
   .sidebar {
     width: 214px;
