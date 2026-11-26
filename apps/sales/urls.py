@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 urlpatterns=[
+    path("personalizados/novo/", views.pedido_personalizado, name="pedido_personalizado_novo"),
     path("pdv/",views.pdv,name="vendas_pdv"),
     path("",views.historico,name="vendas_historico"),
     path("<int:pk>/",views.detalhe,name="venda_detalhe"),

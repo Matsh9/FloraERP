@@ -119,3 +119,59 @@ def cancelar_pedido(pedido, usuario, justificativa):
     pedido.observacoes = (pedido.observacoes + chr(10) + "Cancelamento: " + justificativa).strip()
     pedido.save(update_fields=["status", "cancelado_em", "observacoes"])
     return pedido
+
+
+@transaction.atomic
+def criar_pedido_personalizado(pedido, linhas, usuario):
+    pedido = Pedido.objects.select_for_update().get(pk=pedido.pk)
+    if pedido.status != "aberto":
+        raise ValidationError("Somente pedidos abertos podem receber itens.")
+    if not linhas:
+        raise ValidationError("Adicione pelo menos um produto ao pedido.")
+
+    pedido.atendente = usuario
+    ids_produtos = set()
+    for linha in linhas:
+        if linha.get("kit_id"):
+            kit = Kit.objects.select_for_update().get(pk=linha["kit_id"], ativo=True)
+            ids_produtos.update(kit.componentes.values_list("produto_id", flat=True))
+        else:
+            ids_produtos.add(int(linha["produto_id"]))
+    list(Produto.objects.select_for_update().filter(pk__in=ids_produtos).order_by("pk"))
+
+    subtotal = Decimal("0")
+    for linha in linhas:
+        quantidade = Decimal(str(linha["quantidade"]))
+        if not quantidade.is_finite() or quantidade <= 0:
+            raise ValidationError("Quantidade deve ser maior que zero.")
+        if quantidade.as_tuple().exponent < -2:
+            raise ValidationError("A quantidade deve ter no máximo duas casas decimais.")
+
+        if linha.get("kit_id"):
+            kit = Kit.objects.get(pk=linha["kit_id"], ativo=True)
+            nome = kit.nome
+            preco = kit.preco_venda
+            produto = None
+        else:
+            produto = Produto.objects.get(pk=linha["produto_id"], ativo=True)
+            nome = produto.nome
+            preco = produto.preco_venda
+            kit = None
+
+        item_total = preco * quantidade
+        subtotal += item_total
+        ItemPedido.objects.create(
+            pedido=pedido,
+            produto=produto,
+            kit=kit,
+            nome_item=nome,
+            quantidade=quantidade,
+            preco_unitario=preco,
+            total=item_total,
+        )
+
+    pedido.subtotal = subtotal
+    pedido.desconto = Decimal("0")
+    pedido.total = subtotal
+    pedido.save(update_fields=["atendente", "subtotal", "desconto", "total"])
+    return pedido

@@ -8,8 +8,10 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.http import HttpResponse
 from django.utils import timezone
 from apps.catalog.models import Produto,Kit
+from apps.customers.models import Cliente
+from .forms import PedidoPersonalizadoForm
 from .models import Pedido,ItemPedido
-from .services import concluir_pedido,cancelar_pedido,registrar_pagamento
+from .services import criar_pedido_personalizado,concluir_pedido,cancelar_pedido,registrar_pagamento
 @login_required
 def pdv(request):
  if request.method=="POST":
@@ -67,3 +69,39 @@ def cancelar(request,pk):
   try: cancelar_pedido(p,request.user,request.POST.get("justificativa","").strip() or "Cancelamento administrativo"); messages.success(request,"Venda cancelada e estornada.")
   except ValidationError as e: messages.error(request,str(e))
  return redirect("venda_detalhe",pk=pk)
+@login_required
+def pedido_personalizado(request):
+    form = PedidoPersonalizadoForm(request.POST or None)
+
+    if request.method == "POST":
+        try:
+            raw = request.POST.get("linhas", "[]")
+            linhas = json.loads(raw)
+            if not isinstance(linhas, list) or not linhas:
+                raise ValidationError("Adicione pelo menos um produto ao pedido.")
+            if len(linhas) > 100:
+                raise ValidationError("O pedido excede o limite de 100 itens.")
+            if not form.is_valid():
+                raise ValidationError("Informe os dados obrigatórios do pedido.")
+
+            pedido = form.save(commit=False)
+            pedido.atendente = request.user
+            pedido.save()
+            criar_pedido_personalizado(pedido, linhas, request.user)
+            messages.success(request, f"Pedido personalizado #{str(pedido.numero)[:8]} cadastrado.")
+            return redirect("venda_detalhe", pk=pedido.pk)
+        except (ValueError, InvalidOperation, ValidationError, Produto.DoesNotExist, Kit.DoesNotExist) as e:
+            if "pedido" in locals() and pedido.pk and not pedido.itens.exists():
+                pedido.delete()
+            mensagem = e.message if hasattr(e, "message") else str(e)
+            messages.error(request, mensagem)
+
+    produtos = Produto.objects.filter(ativo=True).select_related("categoria").order_by("nome")
+    kits = Kit.objects.filter(ativo=True).prefetch_related("componentes").order_by("nome")
+    clientes = Cliente.objects.filter(ativo=True).order_by("nome")
+    return render(request, "sales/pedido_personalizado.html", {
+        "form": form,
+        "produtos": produtos,
+        "kits": kits,
+        "clientes": clientes,
+    })
