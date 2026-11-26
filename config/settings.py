@@ -14,7 +14,7 @@ INSTALLED_APPS = [
     "django.contrib.admin","django.contrib.auth","django.contrib.contenttypes",
     "django.contrib.sessions","django.contrib.messages","django.contrib.staticfiles",
     "apps.core","apps.accounts","apps.catalog","apps.customers","apps.inventory",
-    "apps.sales","apps.deliveries","apps.reports",
+    "apps.sales","apps.deliveries","apps.reports","apps.suppliers",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -61,7 +61,7 @@ LOGIN_REDIRECT_URL="dashboard"
 LOGOUT_REDIRECT_URL="login"
 SESSION_COOKIE_HTTPONLY=True
 CSRF_COOKIE_HTTPONLY=False
-SECURE_CONTENT_TYPE_NOSNIFF=True
+SECURE_CONTENT_TYPE_NO_SNIFF=True
 X_FRAME_OPTIONS="DENY"
 if not DEBUG:
     SECURE_SSL_REDIRECT=True
