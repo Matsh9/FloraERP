@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">CADASTRO DE FORNECEDOR</p><h1>{{ fornecedor.nome_fantasia|default:fornecedor.razao_social }}</h1></div>
+  <div>
+    <a class="btn secondary" href="{% url 'fornecedores_lista' %}">← Voltar</a>
+    {% if pode_editar %}{% if form %}<a class="btn secondary" href="{% url 'fornecedor_detalhe' fornecedor.pk %}">Cancelar edição</a>{% else %}<a class="btn primary" href="{% url 'fornecedor_detalhe' fornecedor.pk %}?editar=1">Editar fornecedor</a>{% endif %}{% endif %}
+  </div>
+</div>
+
+{% if form %}
+<div class="panel form-panel">
+  <form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <div class="field {% if field.field.widget.input_type == 'checkbox' %}checkbox-field{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="help">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="form-actions">
+      <a class="btn secondary" href="{% url 'fornecedor_detalhe' fornecedor.pk %}">Cancelar</a>
+      <button class="btn primary" type="submit">Salvar alterações</button>
+    </div>
+  </form>
+</div>
+{% else %}
+<div class="content-grid">
+  <article class="panel"><h2>Dados da empresa</h2>
+    <p><strong>Razão social:</strong> {{ fornecedor.razao_social }}</p>
+    <p><strong>Nome fantasia:</strong> {{ fornecedor.nome_fantasia|default:"—" }}</p>
+    <p><strong>CNPJ:</strong> {{ fornecedor.cnpj|default:"—" }}</p>
+    <p><strong>Inscrição estadual:</strong> {{ fornecedor.inscricao_estadual|default:"—" }}</p>
+    <p><strong>Status:</strong> {{ fornecedor.ativo|yesno:"Ativo,Inativo" }}</p>
+  </article>
+  <article class="panel"><h2>Contato</h2>
+    <p><strong>Pessoa de contato:</strong> {{ fornecedor.contato|default:"—" }}</p>
+    <p><strong>Telefone:</strong> {{ fornecedor.telefone|default:"—" }}</p>
+    <p><strong>WhatsApp:</strong> {{ fornecedor.whatsapp|default:"—" }}</p>
+    <p><strong>E-mail:</strong> {{ fornecedor.email|default:"—" }}</p>
+    <p><strong>Site:</strong>{% if fornecedor.site %} <a class="text-link" href="{{ fornecedor.site }}" target="_blank" rel="noopener noreferrer">{{ fornecedor.site }}</a>{% else %} —{% endif %}</p>
+  </article>
+  <article class="panel"><h2>Endereço</h2>
+    <p>{{ fornecedor.endereco|default:"—" }} {{ fornecedor.numero }}{% if fornecedor.complemento %}, {{ fornecedor.complemento }}{% endif %}</p>
+    <p>{{ fornecedor.bairro|default:"" }}{% if fornecedor.bairro and fornecedor.cidade %} — {% endif %}{{ fornecedor.cidade|default:"" }}{% if fornecedor.estado %}/{{ fornecedor.estado }}{% endif %}</p>
+    <p><strong>CEP:</strong> {{ fornecedor.cep|default:"—" }}</p>
+  </article>
+  <article class="panel"><h2>Observações</h2><p>{{ fornecedor.observacoes|default:"Nenhuma observação cadastrada."|linebreaksbr }}</p></article>
+</div>
+{% endif %}
+{% endblock %}

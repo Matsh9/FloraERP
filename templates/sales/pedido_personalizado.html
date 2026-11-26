@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Novo pedido personalizado · FloraERP{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">PEDIDOS</p>
+    <h1>Novo pedido personalizado</h1>
+    <p class="muted">Selecione o cliente e inclua os produtos personalizados.</p>
+  </div>
+  <a class="btn secondary" href="{% url 'vendas_historico' %}">Voltar ao histórico</a>
+</div>
+
+<div class="pdv-layout">
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Produtos</h2>
+      <input id="pedidoProductSearch" class="compact-input" placeholder="Buscar produto...">
+    </div>
+    <div class="product-grid" id="pedidoProductGrid">
+      {% for p in produtos %}
+      <button type="button" class="product-tile pedido-product" data-id="{{ p.pk }}" data-name="{{ p.nome|escape }}" data-sku="{{ p.sku }}" data-price="{{ p.preco_venda }}">
+        <span class="tile-flower">✿</span>
+        <strong>{{ p.nome }}</strong>
+        <small>{{ p.sku }}</small>
+        <b>R$ {{ p.preco_venda|floatformat:2 }}</b>
+      </button>
+      {% endfor %}
+      {% for k in kits %}
+      <button type="button" class="product-tile kit-tile pedido-product" data-kit="{{ k.pk }}" data-name="{{ k.nome|escape }}" data-sku="" data-price="{{ k.preco_venda }}">
+        <span class="tile-flower">❀</span>
+        <strong>{{ k.nome }}</strong>
+        <small>Kit personalizado</small>
+        <b>R$ {{ k.preco_venda|floatformat:2 }}</b>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel cart-panel">
+    <div class="panel-heading">
+      <h2>Itens do pedido</h2>
+      <span class="tag green" id="pedidoCartCount">0 itens</span>
+    </div>
+
+    <div id="pedidoCartItems" class="cart-items">
+      <div class="empty-state">Selecione um produto para começar.</div>
+    </div>
+
+    <form method="post" id="pedidoPersonalizadoForm">
+      {% csrf_token %}
+      <input type="hidden" name="linhas" id="pedidoCartPayload">
+
+      {{ form.non_field_errors }}
+      <label>{{ form.cliente.label }}
+        {{ form.cliente }}
+        {{ form.cliente.errors }}
+      </label>
+      <label>{{ form.observacoes.label }}
+        {{ form.observacoes }}
+        {{ form.observacoes.errors }}
+      </label>
+
+      <div class="total-row grand-total">
+        <span>Subtotal</span>
+        <strong id="pedidoSubtotal">R$ 0,00</strong>
+      </div>
+      <button class="btn primary full" id="pedidoSubmit" type="submit" disabled>Cadastrar pedido</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/pedido-personalizado.js' %}"></script>
+{% endblock %}
